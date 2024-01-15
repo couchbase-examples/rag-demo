@@ -131,6 +131,12 @@ if __name__ == "__main__":
                     # store the PDF in the vector store after chunking
                     save_to_vector_store(uploaded_file, vector_store)
 
+            # View Code
+            if st.checkbox("View Code"):
+                st.write(
+                    "View the code here: [Github](https://github.com/couchbase-examples/rag-demo/blob/main/chat_with_pdf.py)"
+                )
+
         if "messages" not in st.session_state:
             st.session_state.messages = []
             st.session_state.messages.append(
@@ -167,5 +173,3 @@ if __name__ == "__main__":
             st.session_state.messages.append(
                 {"role": "assistant", "content": full_response}
             )
-    # elif pwd_submit and user_pwd != AUTH:
-    #     st.error("Incorrect password")
