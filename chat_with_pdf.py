@@ -62,6 +62,14 @@ if __name__ == "__main__":
     if "auth" not in st.session_state:
         st.session_state.auth = False
 
+    st.set_page_config(
+        page_title="Chat with your PDF using Langchain, Couchbase & OpenAI",
+        page_icon="🤖",
+        layout="centered",
+        initial_sidebar_state="auto",
+        menu_items=None,
+    )
+
     AUTH = os.getenv("LOGIN_PASSWORD")
     user_pwd = st.text_input("Enter password", type="password")
     pwd_submit = st.button("Submit")
