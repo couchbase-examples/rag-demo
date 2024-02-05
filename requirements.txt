@@ -1,4 +1,4 @@
-couchbase==4.1.0
+couchbase==4.1.11
 streamlit==1.30.0
 langchain-community @ git+https://github.com/nithishr/langchain.git@couchbase-vector-store#subdirectory=libs/community
 httpx==0.26.0
