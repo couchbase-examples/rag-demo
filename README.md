@@ -20,18 +20,19 @@ For RAG, we are using Langchain, Couchbase Vector Search & OpenAI. We fetch part
   `pip install -r requirements.txt`
 
 - Set the environment secrets
-  Copy the secrets.example.toml file in `streamlit` folder and rename it to `secrets.toml` and replace the placeholders with the actual values for your environment
+
+  Copy the `secrets.example.toml` file in `.streamlit` folder and rename it to `secrets.toml` and replace the placeholders with the actual values for your environment
 
   ```
-  OPENAI_API_KEY = "<open_ai_api_key"
-  DB_CONN_STR = "<connection_string_for_couchbase_cluster"
+  OPENAI_API_KEY = "<open_ai_api_key>"
+  DB_CONN_STR = "<connection_string_for_couchbase_cluster>"
   DB_USERNAME = "<username_for_couchbase_cluster>"
   DB_PASSWORD = "<password_for_couchbase_cluster>"
-  DB_BUCKET = "<name_of_bucket_to_store_documents"
-  DB_SCOPE = "<name_of_scope_to_store_documents"
+  DB_BUCKET = "<name_of_bucket_to_store_documents>"
+  DB_SCOPE = "<name_of_scope_to_store_documents>"
   DB_COLLECTION = "<name_of_collection_to_store_documents>"
   INDEX_NAME = "<name_of_fts_index_with_vector_support>"
-  LOGIN_PASSWORD = "<password to access the streamlit app"
+  LOGIN_PASSWORD = "<password to access the streamlit app>"
   ```
 
 - Run the application
