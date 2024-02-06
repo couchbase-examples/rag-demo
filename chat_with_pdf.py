@@ -1,14 +1,23 @@
 import tempfile
 from langchain_community.vectorstores import CouchbaseVectorStore
-from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
 import streamlit as st
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+
+
+def check_environment_variable(variable_name):
+    """Check if environment variable is set"""
+    if variable_name not in os.environ:
+        st.error(
+            f"{variable_name} environment variable is not set. Please add it to the secrets.toml file"
+        )
+        st.stop()
 
 
 def save_to_vector_store(uploaded_file, vector_store):
@@ -71,6 +80,9 @@ if __name__ == "__main__":
     )
 
     AUTH = os.getenv("LOGIN_PASSWORD")
+    check_environment_variable("LOGIN_PASSWORD")
+
+    # Authentication
     user_pwd = st.text_input("Enter password", type="password")
     pwd_submit = st.button("Submit")
 
@@ -88,6 +100,16 @@ if __name__ == "__main__":
         DB_SCOPE = os.getenv("DB_SCOPE")
         DB_COLLECTION = os.getenv("DB_COLLECTION")
         INDEX_NAME = os.getenv("INDEX_NAME")
+
+        # Ensure that all environment variables are set
+        check_environment_variable("OPENAI_API_KEY")
+        check_environment_variable("DB_CONN_STR")
+        check_environment_variable("DB_USERNAME")
+        check_environment_variable("DB_PASSWORD")
+        check_environment_variable("DB_BUCKET")
+        check_environment_variable("DB_SCOPE")
+        check_environment_variable("DB_COLLECTION")
+        check_environment_variable("INDEX_NAME")
 
         # Use OpenAI Embeddings
         embedding = OpenAIEmbeddings()
