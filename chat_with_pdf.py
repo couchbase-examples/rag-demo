@@ -41,11 +41,9 @@ def save_to_vector_store(uploaded_file, vector_store):
         st.info(f"PDF loaded into vector store in {len(doc_pages)} documents")
 
 
-@st.cache_resource(show_spinner="Connecting to Couchbase")
+@st.cache_resource(show_spinner="Connecting to Vector Store")
 def get_vector_store(
-    db_conn_str,
-    db_username,
-    db_password,
+    _cluster,
     db_bucket,
     db_scope,
     db_collection,
@@ -54,9 +52,7 @@ def get_vector_store(
 ):
     """Return the Couchbase vector store"""
     vector_store = CouchbaseVectorStore(
-        connection_string=db_conn_str,
-        db_username=db_username,
-        db_password=db_password,
+        cluster=_cluster,
         bucket_name=db_bucket,
         scope_name=db_scope,
         collection_name=db_collection,
@@ -64,6 +60,25 @@ def get_vector_store(
         index_name=index_name,
     )
     return vector_store
+
+
+@st.cache_resource(show_spinner="Connecting to Couchbase")
+def connect_to_couchbase(connection_string, db_username, db_password):
+    """Connect to couchbase"""
+    from couchbase.cluster import Cluster
+    from couchbase.auth import PasswordAuthenticator
+    from couchbase.options import ClusterOptions
+    from datetime import timedelta
+
+    auth = PasswordAuthenticator(db_username, db_password)
+    options = ClusterOptions(auth)
+    connect_string = connection_string
+    cluster = Cluster(connect_string, options)
+
+    # Wait until the cluster is ready for use.
+    cluster.wait_until_ready(timedelta(seconds=5))
+
+    return cluster
 
 
 if __name__ == "__main__":
@@ -114,10 +129,11 @@ if __name__ == "__main__":
         # Use OpenAI Embeddings
         embedding = OpenAIEmbeddings()
 
+        # Connect to Couchbase Vector Store
+        cluster = connect_to_couchbase(DB_CONN_STR, DB_USERNAME, DB_PASSWORD)
+
         vector_store = get_vector_store(
-            DB_CONN_STR,
-            DB_USERNAME,
-            DB_PASSWORD,
+            cluster,
             DB_BUCKET,
             DB_SCOPE,
             DB_COLLECTION,
