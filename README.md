@@ -35,7 +35,7 @@ For RAG, we are using Langchain, Couchbase Vector Search & OpenAI. We fetch part
   LOGIN_PASSWORD = "<password to access the streamlit app>"
   ```
 
-- Create the Search Index on Full Text Service
+- #### Create the Search Index on Full Text Service
 
   We need to create the Search Index on the Full Text Service in Couchbase. For this demo, you can import the following index using the instructions.
 
