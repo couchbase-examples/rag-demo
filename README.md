@@ -1,4 +1,4 @@
-## RAG Demo using Couchbase, Streamlit, Langchain, and OpenAI
+## RAG Demo using Couchbase, Streamlit, LangChain, and OpenAI
 
 This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model.
 
@@ -11,7 +11,7 @@ For each question, you will get two answers:
 - one using RAG (Couchbase logo)
 - one using pure LLM - OpenAI (🤖).
 
-For RAG, we are using Langchain, Couchbase Vector Search & OpenAI. We fetch parts of the PDF relevant to the question using Vector search & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store.
+For RAG, we are using LangChain, Couchbase Vector Search & OpenAI. We fetch parts of the PDF relevant to the question using Vector search & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store.
 
 ### How to Run
 
