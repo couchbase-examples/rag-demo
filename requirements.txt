@@ -1,4 +1,4 @@
-couchbase==4.2.0
+couchbase==4.2.1
 streamlit==1.33.0
 langchain-community==0.0.33
 langchain==0.1.16
