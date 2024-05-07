@@ -1,8 +1,10 @@
 ## RAG Demo using Couchbase, Streamlit, LangChain, and OpenAI
 
-This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model. 
+This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model.
 
 For the full tutorial, please visit [Developer Portal](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat).
+
+> Note that you need Couchbase Server 7.6 or higher for Vector Search.
 
 ### How does it work?
 
@@ -34,6 +36,7 @@ For RAG, we are using LangChain, Couchbase Vector Search & OpenAI. We fetch part
   DB_SCOPE = "<name_of_scope_to_store_documents>"
   DB_COLLECTION = "<name_of_collection_to_store_documents>"
   INDEX_NAME = "<name_of_fts_index_with_vector_support>"
+  AUTH_ENABLED = "True/False" # enables authentication for the streamlit app using LOGIN_PASSWORD
   LOGIN_PASSWORD = "<password to access the streamlit app>"
   ```
 

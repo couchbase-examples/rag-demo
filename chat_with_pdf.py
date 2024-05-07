@@ -11,6 +11,11 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
 
+def parse_bool(value: str):
+    """Parse boolean values from environment variables"""
+    return value.lower() in ("yes", "true", "t", "1")
+
+
 def check_environment_variable(variable_name):
     """Check if environment variable is set"""
     if variable_name not in os.environ:
@@ -82,10 +87,6 @@ def connect_to_couchbase(connection_string, db_username, db_password):
 
 
 if __name__ == "__main__":
-    # Authorization
-    if "auth" not in st.session_state:
-        st.session_state.auth = False
-
     st.set_page_config(
         page_title="Chat with your PDF using Langchain, Couchbase & OpenAI",
         page_icon="🤖",
@@ -94,17 +95,26 @@ if __name__ == "__main__":
         menu_items=None,
     )
 
-    AUTH = os.getenv("LOGIN_PASSWORD")
-    check_environment_variable("LOGIN_PASSWORD")
+    AUTH_ENABLED = parse_bool(os.getenv("AUTH_ENABLED", "False"))
 
-    # Authentication
-    user_pwd = st.text_input("Enter password", type="password")
-    pwd_submit = st.button("Submit")
-
-    if pwd_submit and user_pwd == AUTH:
+    if not AUTH_ENABLED:
         st.session_state.auth = True
-    elif pwd_submit and user_pwd != AUTH:
-        st.error("Incorrect password")
+    else:
+        # Authorization
+        if "auth" not in st.session_state:
+            st.session_state.auth = False
+
+        AUTH = os.getenv("LOGIN_PASSWORD")
+        check_environment_variable("LOGIN_PASSWORD")
+
+        # Authentication
+        user_pwd = st.text_input("Enter password", type="password")
+        pwd_submit = st.button("Submit")
+
+        if pwd_submit and user_pwd == AUTH:
+            st.session_state.auth = True
+        elif pwd_submit and user_pwd != AUTH:
+            st.error("Incorrect password")
 
     if st.session_state.auth:
         # Load environment variables
@@ -170,7 +180,7 @@ if __name__ == "__main__":
 
         prompt_without_rag = ChatPromptTemplate.from_template(template_without_rag)
 
-        llm_without_rag = ChatOpenAI(model="gpt-4-1106-preview")
+        llm_without_rag = ChatOpenAI(model="gpt-4-1106-preview", streaming=True)
 
         chain_without_rag = (
             {"question": RunnablePassthrough()}
