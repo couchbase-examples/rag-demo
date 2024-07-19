@@ -2,6 +2,8 @@
 
 This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model.
 
+The demo also caches the LLM responses using [CouchbaseCache](https://python.langchain.com/v0.2/docs/integrations/llm_caching/#couchbase-cache) to avoid repeated calls to the LLMs saving time and cost. You need to specify just the collection (in the same scope and bucket for simplicity) to cache the LLM responses.
+
 For the full tutorial, please visit [Developer Portal](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat).
 
 > Note that you need Couchbase Server 7.6 or higher for Vector Search.
@@ -16,6 +18,10 @@ For each question, you will get two answers:
 - one using pure LLM - OpenAI (🤖).
 
 For RAG, we are using LangChain, Couchbase Vector Search & OpenAI. We fetch parts of the PDF relevant to the question using Vector search & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store.
+
+All LLM responses are cached in the collection specified. If the same exact question is asked again, the results are fetched from the Cache instead of calling the LLM.
+
+> Note: The streaming of Cached responses is purely for visual experience as OpenAI integration cannot stream responses from the Cache due to a known [issue](https://github.com/langchain-ai/langchain/issues/9762).
 
 ### How to Run
 
@@ -35,6 +41,7 @@ For RAG, we are using LangChain, Couchbase Vector Search & OpenAI. We fetch part
   DB_BUCKET = "<name_of_bucket_to_store_documents>"
   DB_SCOPE = "<name_of_scope_to_store_documents>"
   DB_COLLECTION = "<name_of_collection_to_store_documents>"
+  CACHE_COLLECTION = "<name_of_collection_to_cache_llm_responses>"
   INDEX_NAME = "<name_of_fts_index_with_vector_support>"
   AUTH_ENABLED = "True/False" # enables authentication for the streamlit app using LOGIN_PASSWORD
   LOGIN_PASSWORD = "<password to access the streamlit app>"
