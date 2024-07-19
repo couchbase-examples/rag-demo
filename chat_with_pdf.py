@@ -9,6 +9,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.globals import set_llm_cache
+from langchain_couchbase.cache import CouchbaseCache
+import time
 
 
 def parse_bool(value: str):
@@ -67,6 +70,18 @@ def get_vector_store(
     return vector_store
 
 
+@st.cache_resource(show_spinner="Connecting to Cache")
+def get_cache(_cluster, db_bucket, db_scope, cache_collection):
+    """Return the Couchbase cache"""
+    cache = CouchbaseCache(
+        cluster=_cluster,
+        bucket_name=db_bucket,
+        scope_name=db_scope,
+        collection_name=cache_collection,
+    )
+    return cache
+
+
 @st.cache_resource(show_spinner="Connecting to Couchbase")
 def connect_to_couchbase(connection_string, db_username, db_password):
     """Connect to couchbase"""
@@ -84,6 +99,13 @@ def connect_to_couchbase(connection_string, db_username, db_password):
     cluster.wait_until_ready(timedelta(seconds=5))
 
     return cluster
+
+
+def stream_string(s, chunk_size=10):
+    """Stream a string with a delay to simulate streaming"""
+    for i in range(0, len(s), chunk_size):
+        yield s[i : i + chunk_size]
+        time.sleep(0.02)
 
 
 if __name__ == "__main__":
@@ -125,6 +147,7 @@ if __name__ == "__main__":
         DB_SCOPE = os.getenv("DB_SCOPE")
         DB_COLLECTION = os.getenv("DB_COLLECTION")
         INDEX_NAME = os.getenv("INDEX_NAME")
+        CACHE_COLLECTION = os.getenv("CACHE_COLLECTION")
 
         # Ensure that all environment variables are set
         check_environment_variable("OPENAI_API_KEY")
@@ -135,6 +158,7 @@ if __name__ == "__main__":
         check_environment_variable("DB_SCOPE")
         check_environment_variable("DB_COLLECTION")
         check_environment_variable("INDEX_NAME")
+        check_environment_variable("CACHE_COLLECTION")
 
         # Use OpenAI Embeddings
         embedding = OpenAIEmbeddings()
@@ -153,6 +177,10 @@ if __name__ == "__main__":
 
         # Use couchbase vector store as a retriever for RAG
         retriever = vector_store.as_retriever()
+
+        # Set the LLM cache
+        cache = get_cache(cluster, DB_BUCKET, DB_SCOPE, CACHE_COLLECTION)
+        set_llm_cache(cache)
 
         # Build the prompt for the RAG
         template = """You are a helpful bot. If you cannot answer based on the context provided, respond with a generic answer. Answer the question as truthfully as possible using the context below:
@@ -258,15 +286,14 @@ if __name__ == "__main__":
 
             # Add placeholder for streaming the response
             with st.chat_message("assistant", avatar=couchbase_logo):
-                message_placeholder = st.empty()
+                # Get the response from the RAG & stream it
+                # In order to cache the response, we need to invoke the chain and cache the response locally as OpenAI does not support it yet
+                # Ref: https://github.com/langchain-ai/langchain/issues/9762
 
-            # stream the response from the RAG
-            rag_response = ""
-            for chunk in chain.stream(question):
-                rag_response += chunk
-                message_placeholder.markdown(rag_response + "▌")
+                rag_response = chain.invoke(question)
 
-            message_placeholder.markdown(rag_response)
+                st.write_stream(stream_string(rag_response))
+
             st.session_state.messages.append(
                 {
                     "role": "assistant",
@@ -275,19 +302,13 @@ if __name__ == "__main__":
                 }
             )
 
-            # stream the response from the pure LLM
+            # Get the response from the pure LLM & stream it
+            pure_llm_response = chain_without_rag.invoke(question)
 
             # Add placeholder for streaming the response
             with st.chat_message("ai", avatar="🤖"):
-                message_placeholder_pure_llm = st.empty()
+                st.write_stream(stream_string(pure_llm_response))
 
-            pure_llm_response = ""
-
-            for chunk in chain_without_rag.stream(question):
-                pure_llm_response += chunk
-                message_placeholder_pure_llm.markdown(pure_llm_response + "▌")
-
-            message_placeholder_pure_llm.markdown(pure_llm_response)
             st.session_state.messages.append(
                 {
                     "role": "assistant",
