@@ -1,5 +1,5 @@
 langchain-couchbase==0.2.2
 streamlit==1.41.1
 langchain-community==0.3.13
-pypdf==5.1.0
+pypdf==5.2.0
 langchain-openai==0.2.14
