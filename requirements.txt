@@ -1,4 +1,4 @@
-langchain-couchbase==0.2.4
+langchain-couchbase==0.3.0
 streamlit==1.44.1
 langchain-community==0.3.21
 pypdf==5.4.0
