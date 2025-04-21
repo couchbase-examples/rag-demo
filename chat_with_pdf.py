@@ -1,5 +1,5 @@
 import tempfile
-from langchain_couchbase.vectorstores import CouchbaseVectorStore
+from langchain_couchbase.vectorstores import CouchbaseSearchVectorStore
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -59,7 +59,7 @@ def get_vector_store(
     index_name,
 ):
     """Return the Couchbase vector store"""
-    vector_store = CouchbaseVectorStore(
+    vector_store = CouchbaseSearchVectorStore(
         cluster=_cluster,
         bucket_name=db_bucket,
         scope_name=db_scope,
