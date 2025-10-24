@@ -13,6 +13,10 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.globals import set_llm_cache
 from langchain_couchbase.cache import CouchbaseCache
 import time
+from couchbase.cluster import Cluster
+from couchbase.auth import PasswordAuthenticator
+from couchbase.options import ClusterOptions
+from datetime import timedelta
 
 
 def parse_bool(value: str):
@@ -86,15 +90,9 @@ def get_cache(_cluster, db_bucket, db_scope, cache_collection):
 @st.cache_resource(show_spinner="Connecting to Couchbase")
 def connect_to_couchbase(connection_string, db_username, db_password):
     """Connect to couchbase"""
-    from couchbase.cluster import Cluster
-    from couchbase.auth import PasswordAuthenticator
-    from couchbase.options import ClusterOptions
-    from datetime import timedelta
-
     auth = PasswordAuthenticator(db_username, db_password)
     options = ClusterOptions(auth)
-    connect_string = connection_string
-    cluster = Cluster(connect_string, options)
+    cluster = Cluster(connection_string, options)
 
     # Wait until the cluster is ready for use.
     cluster.wait_until_ready(timedelta(seconds=5))
@@ -150,14 +148,18 @@ if __name__ == "__main__":
         CACHE_COLLECTION = os.getenv("CACHE_COLLECTION")
 
         # Ensure that all environment variables are set
-        check_environment_variable("OPENAI_API_KEY")
-        check_environment_variable("DB_CONN_STR")
-        check_environment_variable("DB_USERNAME")
-        check_environment_variable("DB_PASSWORD")
-        check_environment_variable("DB_BUCKET")
-        check_environment_variable("DB_SCOPE")
-        check_environment_variable("DB_COLLECTION")
-        check_environment_variable("CACHE_COLLECTION")
+        required_env_vars = [
+            "OPENAI_API_KEY",
+            "DB_CONN_STR",
+            "DB_USERNAME",
+            "DB_PASSWORD",
+            "DB_BUCKET",
+            "DB_SCOPE",
+            "DB_COLLECTION",
+            "CACHE_COLLECTION",
+        ]
+        for var in required_env_vars:
+            check_environment_variable(var)
 
         # Use OpenAI Embeddings
         embedding = OpenAIEmbeddings()

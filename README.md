@@ -4,8 +4,6 @@ This is a demo app built to chat with your custom PDFs using the vector search c
 
 The demo also caches the LLM responses using [CouchbaseCache](https://python.langchain.com/v0.2/docs/integrations/llm_caching/#couchbase-cache) to avoid repeated calls to the LLMs saving time and cost. You need to specify just the collection (in the same scope and bucket for simplicity) to cache the LLM responses.
 
-For the full tutorial, please visit [Developer Portal](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat).
-
 ## Two Vector Search Implementations
 
 This demo provides two implementations showcasing different Couchbase vector search approaches:
@@ -74,6 +72,8 @@ LOGIN_PASSWORD = "<password_to_access_the_streamlit_app>"
 ---
 
 ## Approach 1: FTS-Based Vector Search
+
+For the full tutorial on FTS-based approach, please visit [Developer Portal - FTS Vector Search](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat).
 
 ### Prerequisites
 - Couchbase Server 7.6+ or Couchbase Capella
@@ -183,10 +183,12 @@ streamlit run chat_with_pdf.py
 
 ## Approach 2: GSI-Based Vector Search
 
+For the full tutorial on GSI-based approach, please visit [Developer Portal - GSI Vector Search](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat-gsi).
+
 ### Prerequisites
 - Couchbase Server 8.0+ or Couchbase Capella
 
-This approach uses `CouchbaseQueryVectorStore` which leverages Global Secondary Index (GSI) for vector search. The vector search is performed using N1QL queries with cosine similarity distance metric.
+This approach uses `CouchbaseQueryVectorStore` which leverages Global Secondary Index (GSI) for vector search. The vector search is performed using SQL++ queries with cosine similarity distance metric.
 
 ### Understanding Vector Index Types
 
@@ -210,22 +212,32 @@ Couchbase offers different types of vector indexes for GSI-based vector search:
 - Use Composite Vector Index when scalar filters significantly reduce your search space
 - Consider your dataset size: Hyperscale scales to billions, Composite works well for tens of millions to billions
 
-For more details, see the [Couchbase Vector Index documentation](https://preview.docs.couchbase.com/docs-server-DOC-12565_vector_search_concepts/server/current/vector-index/use-vector-indexes.html).
+For more details, see the [Couchbase Vector Index documentation](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html).
 
 ### Index Configuration (Optional)
 
-While the application works without creating indexes manually, you can optionally create a vector index for better performance:
+While the application works without creating indexes manually, you can optionally create a vector index for better performance.
 
-**Using Couchbase UI or N1QL:**
+> **Important:** The vector index should be created **after** ingesting the documents (uploading PDFs).
 
-```sql
-CREATE INDEX idx_vector ON `your-bucket`.`your-scope`.`your-collection`(embedding VECTOR)
-WITH {
-  "dimension": 1536,
-  "description": "IVF,SQ8",
-  "similarity": "cosine"
-};
+**Using LangChain:**
+
+You can create the index programmatically after uploading your PDFs:
+
+```python
+from langchain_couchbase.vectorstores import IndexType
+
+# Create a vector index on the collection
+vector_store.create_index(
+    index_name="idx_vector",
+    dimension=1536,
+    similarity="cosine",
+    index_type=IndexType.BHIVE,  # or IndexType.COMPOSITE
+    index_description="IVF,SQ8"
+)
 ```
+
+For more details on the `create_index()` method, see the [LangChain Couchbase API documentation](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.vectorstores.query_vector_store.CouchbaseQueryVectorStore.create_index).
 
 **Understanding Index Configuration Parameters:**
 
@@ -249,7 +261,7 @@ The `description` parameter controls how Couchbase optimizes vector storage and 
 - `IVF1000,SQ6` - 1000 centroids, 6-bit scalar quantization
 - `IVF,PQ32x8` - Auto centroids, 32 subquantizers with 8 bits
 
-For detailed configuration options, see the [Quantization & Centroid Settings](https://preview.docs-test.couchbase.com/docs-server-DOC-12565_vector_search_concepts/server/current/vector-index/hyperscale-vector-index.html#algo_settings).
+For detailed configuration options, see the [Quantization & Centroid Settings](https://docs.couchbase.com/server/current/vector-index/hyperscale-vector-index.html#algo_settings).
 
 > **Note:** In GSI vector search, the distance represents the vector distance between the query and document embeddings. Lower distance indicates higher similarity, while higher distance indicates lower similarity. This demo uses cosine similarity for measuring document relevance.
 
