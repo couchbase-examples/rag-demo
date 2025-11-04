@@ -2,7 +2,7 @@
 
 This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model.
 
-The demo also caches the LLM responses using [CouchbaseCache](https://python.langchain.com/v0.2/docs/integrations/llm_caching/#couchbase-cache) to avoid repeated calls to the LLMs saving time and cost. You need to specify just the collection (in the same scope and bucket for simplicity) to cache the LLM responses.
+The demo also caches the LLM responses using [CouchbaseCache](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#module-langchain_couchbase.cache ) to avoid repeated calls to the LLMs saving time and cost. You need to specify just the collection (in the same scope and bucket for simplicity) to cache the LLM responses.
 
 ## Two Vector Search Implementations
 
@@ -27,7 +27,6 @@ All LLM responses are cached in the collection specified. If the same exact ques
 
 > Note: The streaming of Cached responses is purely for visual experience as OpenAI integration cannot stream responses from the Cache due to a known [issue](https://github.com/langchain-ai/langchain/issues/9762).
 
----
 
 ## Setup Instructions
 
@@ -70,11 +69,11 @@ LOGIN_PASSWORD = "<password_to_access_the_streamlit_app>"
 
 > **Note:** Couchbase Vector Search approach does not require `INDEX_NAME` parameter.
 
----
+
 
 ## Approach 1: Couchbase Vector Search (Hyperscale/Composite)
 
-For the full tutorial on Couchbase Vector Search approach, please visit [Developer Portal - Couchbase Vector Search](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat-gsi).
+For the full tutorial on Couchbase Vector Search approach, please visit [Developer Portal - Couchbase Vector Search](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat-query).
 
 ### Prerequisites
 - Couchbase Server 8.0+ or Couchbase Capella
