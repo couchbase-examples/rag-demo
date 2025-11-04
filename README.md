@@ -8,8 +8,9 @@ The demo also caches the LLM responses using [CouchbaseCache](https://python.lan
 
 This demo provides two implementations showcasing different Couchbase vector search approaches:
 
-1. **FTS-Based Vector Search** (`chat_with_pdf.py`) - Uses Full Text Search indexes
-2. **GSI-Based Vector Search** (`chat_with_pdf_gsi.py`) - Uses Global Secondary Indexes
+1. **CouchbaseQueryVectorStore** (`chat_with_pdf_query.py`) - Using Couchbase Vector Search (Hyperscale/Composite Vector Indexes) with the Query and Indexing Services.
+2. **CouchbaseSearchVectorStore** (`chat_with_pdf.py`) - Using Couchbase Search (formerly known as Full Text Search) Service.
+
 
 ### How does it work?
 
@@ -38,22 +39,7 @@ All LLM responses are cached in the collection specified. If the same exact ques
 
 Copy the `secrets.example.toml` file in `.streamlit` folder and rename it to `secrets.toml` and replace the placeholders with the actual values for your environment.
 
-**For FTS Vector Search (`chat_with_pdf.py`):**
-```toml
-OPENAI_API_KEY = "<open_ai_api_key>"
-DB_CONN_STR = "<connection_string_for_couchbase_cluster>"
-DB_USERNAME = "<username_for_couchbase_cluster>"
-DB_PASSWORD = "<password_for_couchbase_cluster>"
-DB_BUCKET = "<name_of_bucket_to_store_documents>"
-DB_SCOPE = "<name_of_scope_to_store_documents>"
-DB_COLLECTION = "<name_of_collection_to_store_documents>"
-CACHE_COLLECTION = "<name_of_collection_to_cache_llm_responses>"
-INDEX_NAME = "<name_of_fts_index_with_vector_support>"
-AUTH_ENABLED = "False"
-LOGIN_PASSWORD = "<password_to_access_the_streamlit_app>"
-```
-
-**For GSI Vector Search (`chat_with_pdf_gsi.py`):**
+**For Couchbase Vector Search - Hyperscale/Composite (`chat_with_pdf_query.py`):**
 ```toml
 OPENAI_API_KEY = "<open_ai_api_key>"
 DB_CONN_STR = "<connection_string_for_couchbase_cluster>"
@@ -67,20 +53,126 @@ AUTH_ENABLED = "False"
 LOGIN_PASSWORD = "<password_to_access_the_streamlit_app>"
 ```
 
-> **Note:** GSI approach does not require `INDEX_NAME` parameter.
+**For Couchbase Search (`chat_with_pdf.py`):**
+```toml
+OPENAI_API_KEY = "<open_ai_api_key>"
+DB_CONN_STR = "<connection_string_for_couchbase_cluster>"
+DB_USERNAME = "<username_for_couchbase_cluster>"
+DB_PASSWORD = "<password_for_couchbase_cluster>"
+DB_BUCKET = "<name_of_bucket_to_store_documents>"
+DB_SCOPE = "<name_of_scope_to_store_documents>"
+DB_COLLECTION = "<name_of_collection_to_store_documents>"
+CACHE_COLLECTION = "<name_of_collection_to_cache_llm_responses>"
+INDEX_NAME = "<name_of_search_index_with_vector_support>"
+AUTH_ENABLED = "False"
+LOGIN_PASSWORD = "<password_to_access_the_streamlit_app>"
+```
+
+> **Note:** Couchbase Vector Search approach does not require `INDEX_NAME` parameter.
 
 ---
 
-## Approach 1: FTS-Based Vector Search
+## Approach 1: Couchbase Vector Search (Hyperscale/Composite)
 
-For the full tutorial on FTS-based approach, please visit [Developer Portal - FTS Vector Search](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat).
+For the full tutorial on Couchbase Vector Search approach, please visit [Developer Portal - Couchbase Vector Search](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat-gsi).
+
+### Prerequisites
+- Couchbase Server 8.0+ or Couchbase Capella
+
+This approach uses `CouchbaseQueryVectorStore` which leverages Couchbase's Hyperscale and Composite Vector Indexes (built on Global Secondary Index infrastructure). The vector search is performed using SQL++ queries with cosine similarity distance metric.
+
+### Understanding Vector Index Types
+
+Couchbase offers different types of vector indexes for Couchbase Vector Search:
+
+**Hyperscale Vector Indexes (BHIVE)**
+- Best for pure vector searches - content discovery, recommendations, semantic search
+- High performance with low memory footprint - designed to scale to billions of vectors
+- Optimized for concurrent operations - supports simultaneous searches and inserts
+- Use when: You primarily perform vector-only queries without complex scalar filtering
+- Ideal for: Large-scale semantic search, recommendation systems, content discovery
+
+**Composite Vector Indexes**
+- Best for filtered vector searches - combines vector search with scalar value filtering
+- Efficient pre-filtering - scalar attributes reduce the vector comparison scope
+- Use when: Your queries combine vector similarity with scalar filters that eliminate large portions of data
+- Ideal for: Compliance-based filtering, user-specific searches, time-bounded queries
+
+**Choosing the Right Index Type**
+- Start with Hyperscale Vector Index for pure vector searches and large datasets
+- Use Composite Vector Index when scalar filters significantly reduce your search space
+- Consider your dataset size: Hyperscale scales to billions, Composite works well for tens of millions to billions
+
+For more details, see the [Couchbase Vector Index documentation](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html).
+
+### Index Configuration (Optional)
+
+While the application works without creating indexes manually, you can optionally create a vector index for better performance.
+
+> **Important:** The vector index should be created **after** ingesting the documents (uploading PDFs).
+
+**Using LangChain:**
+
+You can create the index programmatically after uploading your PDFs:
+
+```python
+from langchain_couchbase.vectorstores import IndexType
+
+# Create a vector index on the collection
+vector_store.create_index(
+    index_name="idx_vector",
+    dimension=1536,
+    similarity="cosine",
+    index_type=IndexType.BHIVE,  # or IndexType.COMPOSITE
+    index_description="IVF,SQ8"
+)
+```
+
+For more details on the `create_index()` method, see the [LangChain Couchbase API documentation](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.vectorstores.query_vector_store.CouchbaseQueryVectorStore.create_index).
+
+**Understanding Index Configuration Parameters:**
+
+The `description` parameter controls how Couchbase optimizes vector storage and search performance:
+
+**Format:** `'IVF[<centroids>],{PQ|SQ}<settings>'`
+
+**Centroids (IVF - Inverted File):**
+- Controls how the dataset is subdivided for faster searches
+- More centroids = faster search, slower training
+- Fewer centroids = slower search, faster training
+- If omitted (like `IVF,SQ8`), Couchbase auto-selects based on dataset size
+
+**Quantization Options:**
+- **SQ (Scalar Quantization)**: `SQ4`, `SQ6`, `SQ8` (4, 6, or 8 bits per dimension)
+- **PQ (Product Quantization)**: `PQ<subquantizers>x<bits>` (e.g., `PQ32x8`)
+- Higher values = better accuracy, larger index size
+
+**Common Examples:**
+- `IVF,SQ8` - Auto centroids, 8-bit scalar quantization (good default)
+- `IVF1000,SQ6` - 1000 centroids, 6-bit scalar quantization
+- `IVF,PQ32x8` - Auto centroids, 32 subquantizers with 8 bits
+
+For detailed configuration options, see the [Quantization & Centroid Settings](https://docs.couchbase.com/server/current/vector-index/hyperscale-vector-index.html#algo_settings).
+
+> **Note:** In Couchbase Vector Search, the distance represents the vector distance between the query and document embeddings. Lower distance indicates higher similarity, while higher distance indicates lower similarity. This demo uses cosine similarity for measuring document relevance.
+
+### Run the Couchbase Vector Search application
+
+```bash
+streamlit run chat_with_pdf_query.py
+```
+
+
+## Approach 2: Couchbase Search
+
+For the full tutorial on Couchbase Search approach, please visit [Developer Portal - Couchbase Search](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat).
 
 ### Prerequisites
 - Couchbase Server 7.6+ or Couchbase Capella
 
-### Create the Search Index on Full Text Service
+### Create the Search Index
 
-We need to create the Search Index on the Full Text Service in Couchbase. For this demo, you can import the following index using the instructions.
+We need to create the Search Index in Couchbase. For this demo, you can import the following index using the instructions.
 
 - [Couchbase Capella](https://docs.couchbase.com/cloud/search/import-search-index.html)
 
@@ -173,100 +265,8 @@ Here, we are creating the index `pdf_search` on the documents in the `docs` coll
 }
 ```
 
-### Run the FTS application
+### Run the Couchbase Search application
 
 ```bash
 streamlit run chat_with_pdf.py
-```
-
----
-
-## Approach 2: GSI-Based Vector Search
-
-For the full tutorial on GSI-based approach, please visit [Developer Portal - GSI Vector Search](https://developer.couchbase.com/tutorial-python-langchain-pdf-chat-gsi).
-
-### Prerequisites
-- Couchbase Server 8.0+ or Couchbase Capella
-
-This approach uses `CouchbaseQueryVectorStore` which leverages Global Secondary Index (GSI) for vector search. The vector search is performed using SQL++ queries with cosine similarity distance metric.
-
-### Understanding Vector Index Types
-
-Couchbase offers different types of vector indexes for GSI-based vector search:
-
-**Hyperscale Vector Indexes (BHIVE)**
-- Best for pure vector searches - content discovery, recommendations, semantic search
-- High performance with low memory footprint - designed to scale to billions of vectors
-- Optimized for concurrent operations - supports simultaneous searches and inserts
-- Use when: You primarily perform vector-only queries without complex scalar filtering
-- Ideal for: Large-scale semantic search, recommendation systems, content discovery
-
-**Composite Vector Indexes**
-- Best for filtered vector searches - combines vector search with scalar value filtering
-- Efficient pre-filtering - scalar attributes reduce the vector comparison scope
-- Use when: Your queries combine vector similarity with scalar filters that eliminate large portions of data
-- Ideal for: Compliance-based filtering, user-specific searches, time-bounded queries
-
-**Choosing the Right Index Type**
-- Start with Hyperscale Vector Index for pure vector searches and large datasets
-- Use Composite Vector Index when scalar filters significantly reduce your search space
-- Consider your dataset size: Hyperscale scales to billions, Composite works well for tens of millions to billions
-
-For more details, see the [Couchbase Vector Index documentation](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html).
-
-### Index Configuration (Optional)
-
-While the application works without creating indexes manually, you can optionally create a vector index for better performance.
-
-> **Important:** The vector index should be created **after** ingesting the documents (uploading PDFs).
-
-**Using LangChain:**
-
-You can create the index programmatically after uploading your PDFs:
-
-```python
-from langchain_couchbase.vectorstores import IndexType
-
-# Create a vector index on the collection
-vector_store.create_index(
-    index_name="idx_vector",
-    dimension=1536,
-    similarity="cosine",
-    index_type=IndexType.BHIVE,  # or IndexType.COMPOSITE
-    index_description="IVF,SQ8"
-)
-```
-
-For more details on the `create_index()` method, see the [LangChain Couchbase API documentation](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.vectorstores.query_vector_store.CouchbaseQueryVectorStore.create_index).
-
-**Understanding Index Configuration Parameters:**
-
-The `description` parameter controls how Couchbase optimizes vector storage and search performance:
-
-**Format:** `'IVF[<centroids>],{PQ|SQ}<settings>'`
-
-**Centroids (IVF - Inverted File):**
-- Controls how the dataset is subdivided for faster searches
-- More centroids = faster search, slower training
-- Fewer centroids = slower search, faster training
-- If omitted (like `IVF,SQ8`), Couchbase auto-selects based on dataset size
-
-**Quantization Options:**
-- **SQ (Scalar Quantization)**: `SQ4`, `SQ6`, `SQ8` (4, 6, or 8 bits per dimension)
-- **PQ (Product Quantization)**: `PQ<subquantizers>x<bits>` (e.g., `PQ32x8`)
-- Higher values = better accuracy, larger index size
-
-**Common Examples:**
-- `IVF,SQ8` - Auto centroids, 8-bit scalar quantization (good default)
-- `IVF1000,SQ6` - 1000 centroids, 6-bit scalar quantization
-- `IVF,PQ32x8` - Auto centroids, 32 subquantizers with 8 bits
-
-For detailed configuration options, see the [Quantization & Centroid Settings](https://docs.couchbase.com/server/current/vector-index/hyperscale-vector-index.html#algo_settings).
-
-> **Note:** In GSI vector search, the distance represents the vector distance between the query and document embeddings. Lower distance indicates higher similarity, while higher distance indicates lower similarity. This demo uses cosine similarity for measuring document relevance.
-
-### Run the GSI application
-
-```bash
-streamlit run chat_with_pdf_gsi.py
 ```
