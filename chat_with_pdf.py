@@ -252,7 +252,7 @@ if __name__ == "__main__":
             )
 
             st.markdown(
-                "For RAG, we are using [Langchain](https://langchain.com/), [Couchbase Vector Search using Search Service](https://couchbase.com/) & [OpenAI](https://openai.com/). We fetch parts of the PDF relevant to the question using Vector search using the Search (FTS) Service & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store."
+                "For RAG, we are using [Langchain](https://langchain.com/), [Couchbase Vector Search using Search Service](https://couchbase.com/) & [OpenAI](https://openai.com/). We fetch parts of the PDF relevant to the question using Vector Search using the Search (FTS) Service and add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store."
             )
 
             # View Code
