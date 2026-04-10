@@ -192,7 +192,7 @@ if __name__ == "__main__":
         prompt = ChatPromptTemplate.from_template(template)
 
         # Use OpenAI GPT 4 as the LLM for the RAG
-        llm = ChatOpenAI(temperature=0, model="gpt-4-1106-preview", streaming=True)
+        llm = ChatOpenAI(temperature=0, model="gpt-5.4-nano", streaming=True)
 
         # RAG chain
         chain = (
@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
         prompt_without_rag = ChatPromptTemplate.from_template(template_without_rag)
 
-        llm_without_rag = ChatOpenAI(model="gpt-4-1106-preview", streaming=True)
+        llm_without_rag = ChatOpenAI(model="gpt-5.4-nano", streaming=True)
 
         chain_without_rag = (
             {"question": RunnablePassthrough()}
