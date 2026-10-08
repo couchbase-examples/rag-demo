@@ -35,6 +35,18 @@ All LLM responses are cached in the collection specified. If the same exact ques
 
   `pip install -r requirements.txt`
 
+### Smoke tests
+
+Streamlit + Playwright smoke tests for both apps run in CI without any credentials:
+
+```bash
+pip install -r requirements-dev.txt
+python -m playwright install --with-deps chromium
+python -m pytest tests/smoke -v
+```
+
+See [AGENTS.md](AGENTS.md) for what they cover and the manual live-validation checklist for dependency updates.
+
 ### Set the environment secrets
 
 Copy the `secrets.example.toml` file in `.streamlit` folder and rename it to `secrets.toml` and replace the placeholders with the actual values for your environment.
