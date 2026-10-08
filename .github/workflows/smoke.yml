@@ -32,3 +32,40 @@ jobs:
 
       - name: Run Streamlit + Playwright smoke tests
         run: python -m pytest tests/smoke -v
+
+  openai-provider-smoke:
+    name: OpenAI provider smoke (optional, OPENAI_API_KEY)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Check for OPENAI_API_KEY
+        id: key
+        run: |
+          if [ -n "$OPENAI_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=OpenAI provider smoke skipped::OPENAI_API_KEY is not available to this run (not configured, or a fork or Dependabot PR). Run this workflow manually to check the live OpenAI path."
+          fi
+
+      - if: steps.key.outputs.present == 'true'
+        uses: actions/checkout@v4
+
+      - if: steps.key.outputs.present == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install Python dependencies
+        if: steps.key.outputs.present == 'true'
+        run: pip install -r requirements-dev.txt
+
+      - name: Run live OpenAI provider smoke tests
+        if: steps.key.outputs.present == 'true'
+        run: python -m pytest tests/provider -v -rs

@@ -45,7 +45,13 @@ python -m playwright install --with-deps chromium
 python -m pytest tests/smoke -v
 ```
 
-See [AGENTS.md](AGENTS.md) for what they cover and the manual live-validation checklist for dependency updates.
+An optional live OpenAI provider check (no Couchbase) runs when `OPENAI_API_KEY` is set and is skipped otherwise:
+
+```bash
+python -m pytest tests/provider -v -rs
+```
+
+See [AGENTS.md](AGENTS.md) for what each tier covers and the manual live-validation checklist for dependency updates. Neither test suite replaces a full Couchbase-backed RAG run.
 
 ### Set the environment secrets
 
