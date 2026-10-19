@@ -41,8 +41,9 @@ def save_to_vector_store(uploaded_file, vector_store):
 
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_file.getvalue())
-            loader = PyPDFLoader(temp_file_path)
-            docs = loader.load()
+
+        loader = PyPDFLoader(temp_file_path)
+        docs = loader.load()
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1500, chunk_overlap=150
