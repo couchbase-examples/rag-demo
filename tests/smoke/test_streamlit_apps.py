@@ -64,7 +64,12 @@ def test_stubbed_app_upload_and_chat(page, start_app, entrypoint, tmp_path):
     # Expected controls and text render.
     expect(page.get_by_role("heading", name=APPS[entrypoint])).to_be_visible()
     expect(page.get_by_text("Upload your PDF")).to_be_visible()
-    expect(page.get_by_role("button", name="Upload", exact=True)).to_be_visible()
+    # Streamlit 1.67+ also labels the file uploader dropzone button "Upload",
+    # so scope the locator to the form submit button.
+    upload_button = page.get_by_test_id("stFormSubmitButton").get_by_role(
+        "button", name="Upload", exact=True
+    )
+    expect(upload_button).to_be_visible()
     expect(page.get_by_text("How does it work?")).to_be_visible()
     expect(
         page.get_by_text("Hi, I'm a chatbot who can chat with the PDF.")
@@ -77,7 +82,7 @@ def test_stubbed_app_upload_and_chat(page, start_app, entrypoint, tmp_path):
     pdf = make_pdf(tmp_path / "smoke.pdf", f"The secret code is {PDF_MARKER}.")
     page.locator('input[type="file"]').set_input_files(pdf)
     expect(page.get_by_text("smoke.pdf")).to_be_visible(timeout=TIMEOUT_MS)
-    page.get_by_role("button", name="Upload", exact=True).click()
+    upload_button.click()
     expect(
         page.get_by_text(re.compile(r"PDF loaded into vector store in \d+ documents"))
     ).to_be_visible(timeout=TIMEOUT_MS)
